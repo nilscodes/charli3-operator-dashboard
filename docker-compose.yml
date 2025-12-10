@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: charli3-dashboard-backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_PATH=./config.yaml
+    volumes:
+      - ./backend/config.yaml:/app/config.yaml:ro
+    restart: unless-stopped
+    networks:
+      - charli3-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:4000
+    container_name: charli3-dashboard-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - charli3-network
+
+networks:
+  charli3-network:
+    driver: bridge
+
