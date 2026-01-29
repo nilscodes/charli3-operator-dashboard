@@ -1,11 +1,19 @@
 export interface NodeData {
   address: string;
   pair: string;
+  oracleScriptAddress: string;
+  startDate: string;
+  endDate?: string;
   currentBalance: string;
   lifetimeReceived: string;
   lifetimeSpent: string;
   isBelowThreshold: boolean;
   threshold: string;
+  rewardTokensEarned: string;
+  rewardValueAda: string;
+  roiPercent: number;
+  estimatedRewardTokens: string;
+  estimatedRoiPercent: number;
 }
 
 export interface NodesResponse {
@@ -52,6 +60,38 @@ export interface PriceResponse {
   price: number;
   currency: string;
   provider: string;
+  timestamp: string;
+}
+
+export interface FeedRewardBreakdown {
+  pair: string;
+  oracleScriptAddress: string;
+  tokenAmount: string;
+  tokenAmountFormatted: string;
+  transactionCount: number;
+}
+
+export interface RewardBreakdownResponse {
+  feeds: FeedRewardBreakdown[];
+  totalTokens: string;
+}
+
+export interface ROISummaryResponse {
+  costs: {
+    totalFeesLovelace: string;
+    totalFeesAda: string;
+    totalFeesUsd: number;
+    adaPriceUsd: number;
+  };
+  revenue: {
+    tokenBalance: string;
+    tokenPriceUsd: number;
+    totalRevenueUsd: number;
+  };
+  roi: {
+    netProfitUsd: number;
+    profitMarginPercent: number;
+  };
   timestamp: string;
 }
 

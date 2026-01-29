@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ConfigLoader } from '@config/loader.js';
 
-/**
- * Middleware to verify API key authentication
- */
 export function authenticateApiKey(req: Request, res: Response, next: NextFunction): void {
   const apiKey = req.headers['x-api-key'] as string;
 
@@ -28,4 +25,3 @@ export function authenticateApiKey(req: Request, res: Response, next: NextFuncti
 
   next();
 }
-

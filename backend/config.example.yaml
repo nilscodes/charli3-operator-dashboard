@@ -30,23 +30,37 @@ adaThreshold: 100000000
 
 # Oracle Node Configurations
 # List of node addresses to monitor
-# Each address should be associated with a single oracle pair
+# Each address should be associated with:
+#   - address: The node's payment address
+#   - pair: The oracle pair (e.g., ADA/USD, BTC/ADA)
+#   - oracleScriptAddress: The script address for this oracle feed (used to track rewards and filter transactions)
+#   - startDate: When this feed became active (YYYY-MM-DD format)
+#   - endDate: Optional - when this feed stopped being active (YYYY-MM-DD format)
 nodes:
   # Example node 1
   - address: addr1qxy...your_node_address_here
     pair: ADA/USD
+    oracleScriptAddress: addr1w9...your_script_address_here
+    startDate: 2024-01-01
+    # endDate: 2025-12-31  # Optional
 
   # Example node 2
   - address: addr1qab...another_node_address
     pair: BTC/USD
+    oracleScriptAddress: addr1w9...another_script_address
+    startDate: 2024-01-01
 
   # Example node 3
   - address: addr1qcd...another_node_address
     pair: ETH/USD
+    oracleScriptAddress: addr1w9...another_script_address
+    startDate: 2024-01-01
 
   # Add more nodes as needed
   # - address: addr1...
   #   pair: YOUR_PAIR
+  #   oracleScriptAddress: addr1w9...
+  #   startDate: YYYY-MM-DD
 
 # Reward Address Configuration
 # Address where rewards are collected
@@ -56,6 +70,12 @@ rewardAddress: addr1qre...your_reward_address
 # Policy ID of the token to track in the reward address
 # This should be the hex-encoded policy ID
 tokenPolicy: a0b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5
+
+# Token Decimals
+# Number of decimal places for the token
+# The database stores token amounts in smallest units (e.g., 1,000,000 = 1 token with 6 decimals)
+# Default: 6 (standard for Cardano native tokens)
+tokenDecimals: 6
 
 # Price Provider Configuration
 priceProvider:

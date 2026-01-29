@@ -16,7 +16,6 @@ export class ConfigLoader {
       const fileContents = fs.readFileSync(path, 'utf8');
       const config = yaml.load(fileContents) as AppConfig;
 
-      // Validate required fields
       this.validate(config);
 
       this.instance = config;
@@ -32,7 +31,6 @@ export class ConfigLoader {
   private static validate(config: AppConfig): void {
     const errors: string[] = [];
 
-    // Validate database config
     if (!config.database) {
       errors.push('database configuration is required');
     } else {
@@ -43,17 +41,14 @@ export class ConfigLoader {
       if (!config.database.password) errors.push('database.password is required');
     }
 
-    // Validate API keys
     if (!config.apiKeys || !Array.isArray(config.apiKeys) || config.apiKeys.length === 0) {
       errors.push('at least one API key is required');
     }
 
-    // Validate Ada threshold
     if (typeof config.adaThreshold !== 'number' || config.adaThreshold < 0) {
       errors.push('adaThreshold must be a positive number');
     }
 
-    // Validate nodes
     if (!config.nodes || !Array.isArray(config.nodes) || config.nodes.length === 0) {
       errors.push('at least one node configuration is required');
     } else {
@@ -67,17 +62,14 @@ export class ConfigLoader {
       });
     }
 
-    // Validate reward address
     if (!config.rewardAddress) {
       errors.push('rewardAddress is required');
     }
 
-    // Validate token policy
     if (!config.tokenPolicy) {
       errors.push('tokenPolicy is required');
     }
 
-    // Validate price provider
     if (!config.priceProvider) {
       errors.push('priceProvider configuration is required');
     } else {
@@ -101,4 +93,3 @@ export class ConfigLoader {
     return this.instance;
   }
 }
-

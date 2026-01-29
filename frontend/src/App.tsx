@@ -4,6 +4,7 @@ import { Dashboard } from '@/pages/Dashboard';
 import { NodeDetail } from '@/pages/NodeDetail';
 import { ApiKeyModal } from '@/components/ApiKeyModal';
 import { useAuth } from '@/hooks/useAuth';
+import { PrivacyProvider } from '@/contexts/PrivacyContext';
 
 function App() {
   const { isAuthenticated, isChecking, handleAuthSuccess } = useAuth();
@@ -14,15 +15,17 @@ function App() {
 
   return (
     <ChakraProvider>
-      <ApiKeyModal isOpen={!isAuthenticated} onSuccess={handleAuthSuccess} />
-      {isAuthenticated && (
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/node/:address" element={<NodeDetail />} />
-          </Routes>
-        </BrowserRouter>
-      )}
+      <PrivacyProvider>
+        <ApiKeyModal isOpen={!isAuthenticated} onSuccess={handleAuthSuccess} />
+        {isAuthenticated && (
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/node/:address" element={<NodeDetail />} />
+            </Routes>
+          </BrowserRouter>
+        )}
+      </PrivacyProvider>
     </ChakraProvider>
   );
 }

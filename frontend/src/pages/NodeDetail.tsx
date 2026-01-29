@@ -22,7 +22,11 @@ import {
   Stat,
   StatLabel,
   StatNumber,
+  IconButton,
+  Tooltip as ChakraTooltip,
+  useColorModeValue,
 } from '@chakra-ui/react';
+import { FiEye, FiEyeOff, FiSun, FiMoon } from 'react-icons/fi';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@/hooks/useQuery';
@@ -30,21 +34,40 @@ import { apiClient } from '@/services/api';
 import { formatAda, formatDate, truncateAddress } from '@/utils/format';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, subDays } from 'date-fns';
+import { usePrivacy } from '@/contexts/PrivacyContext';
+import { useTheme } from '@/hooks/useTheme';
 
 export function NodeDetail() {
   const { address } = useParams<{ address: string }>();
   const navigate = useNavigate();
+  const { privacyMode, togglePrivacy } = usePrivacy();
+  const { isDark, toggleColorMode } = useTheme();
   
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const textColor = useColorModeValue('gray.600', 'gray.400');
+  const statBgBlue = useColorModeValue('blue.50', 'blue.900');
+  const statBgGreen = useColorModeValue('green.50', 'green.900');
+  const statBgOrange = useColorModeValue('orange.50', 'orange.900');
+
   const [fromDate, setFromDate] = useState<string>(
     format(subDays(new Date(), 30), 'yyyy-MM-dd')
   );
   const [toDate, setToDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+
+  const { data: nodesData } = useQuery(
+    ['nodes'],
+    () => apiClient.getNodes()
+  );
 
   const { data: balanceData, isLoading: balanceLoading } = useQuery(
     ['node-balance', address!],
     () => apiClient.getNodeBalance(address!),
     { enabled: !!address }
   );
+
+  const currentNode = useMemo(() => {
+    return nodesData?.nodes.find(node => node.address === address);
+  }, [nodesData, address]);
 
   const { data: txData, isLoading: txLoading, error: txError } = useQuery(
     ['node-transactions', address!, fromDate, toDate],
@@ -59,20 +82,23 @@ export function NodeDetail() {
   const chartData = useMemo(() => {
     if (!txData?.transactions) return [];
 
-    // Group transactions by day
+    // Group transaction fees by day and sort by timestamp for correct chart display
     const grouped = txData.transactions.reduce((acc, tx) => {
       const date = format(new Date(tx.blockTime), 'MMM dd');
+      const timestamp = new Date(tx.blockTime).getTime();
       if (!acc[date]) {
-        acc[date] = { date, value: 0 };
+        acc[date] = { date, fees: 0, timestamp };
       }
-      acc[date].value += Number(tx.value);
+      acc[date].fees += Number(tx.value);
       return acc;
-    }, {} as Record<string, { date: string; value: number }>);
+    }, {} as Record<string, { date: string; fees: number; timestamp: number }>);
 
-    return Object.values(grouped).map(item => ({
-      date: item.date,
-      ada: item.value / 1_000_000,
-    }));
+    return Object.values(grouped)
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(item => ({
+        date: item.date,
+        fees: item.fees / 1_000_000,
+      }));
   }, [txData]);
 
   if (!address) {
@@ -87,22 +113,71 @@ export function NodeDetail() {
   }
 
   return (
-    <Box minH="100vh" bg="gray.50" py={8}>
+    <Box minH="100vh" bg={bgColor} py={8}>
       <Container maxW="container.xl">
         <VStack align="stretch" spacing={8}>
-          <HStack>
+          <HStack justify="space-between">
             <Button size="sm" onClick={() => navigate('/')}>
               ← Back to Dashboard
             </Button>
+            <HStack spacing={2}>
+              <ChakraTooltip label={privacyMode ? 'Show addresses & pairs' : 'Hide addresses & pairs'} fontSize="xs">
+                <IconButton
+                  aria-label="Toggle privacy mode"
+                  icon={privacyMode ? <FiEyeOff /> : <FiEye />}
+                  size="sm"
+                  variant="ghost"
+                  onClick={togglePrivacy}
+                />
+              </ChakraTooltip>
+              <ChakraTooltip label={isDark ? 'Light mode' : 'Dark mode'} fontSize="xs">
+                <IconButton
+                  aria-label="Toggle theme"
+                  icon={isDark ? <FiSun /> : <FiMoon />}
+                  size="sm"
+                  variant="ghost"
+                  onClick={toggleColorMode}
+                />
+              </ChakraTooltip>
+            </HStack>
           </HStack>
 
           <Box>
-            <Heading size="lg" mb={2}>
-              Node Details
+            <Heading 
+              size="lg" 
+              mb={2}
+              style={{
+                filter: privacyMode ? 'blur(10px)' : 'none',
+                transition: 'filter 0.2s',
+              }}
+            >
+              {currentNode?.pair || 'Node Details'}
             </Heading>
-            <Text fontSize="sm" color="gray.600" fontFamily="mono">
+            <Text 
+              fontSize="sm" 
+              color={textColor} 
+              fontFamily="mono"
+              style={{
+                filter: privacyMode ? 'blur(4px)' : 'none',
+                transition: 'filter 0.2s',
+              }}
+            >
               {address}
             </Text>
+            {currentNode && (
+              <HStack spacing={4} mt={2} fontSize="sm" color={textColor}>
+                {currentNode.startDate && (
+                  <Text>
+                    Active Since: <Text as="span" fontWeight="medium">{format(new Date(currentNode.startDate), 'MMM dd, yyyy')}</Text>
+                  </Text>
+                )}
+                {currentNode.endDate && (
+                  <Text>
+                    Active Until: <Text as="span" fontWeight="medium">{format(new Date(currentNode.endDate), 'MMM dd, yyyy')}</Text>
+                  </Text>
+                )}
+              </HStack>
+            )}
           </Box>
 
           {balanceLoading && (
@@ -136,7 +211,7 @@ export function NodeDetail() {
               <Card>
                 <CardBody>
                   <Stat>
-                    <StatLabel>Lifetime Spent</StatLabel>
+                    <StatLabel>Transaction Fees</StatLabel>
                     <StatNumber>₳ {formatAda(balanceData.lifetimeSpent)}</StatNumber>
                   </Stat>
                 </CardBody>
@@ -176,25 +251,25 @@ export function NodeDetail() {
 
                 {txData?.stats && (
                   <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                    <Box p={3} bg="blue.50" borderRadius="md">
-                      <Text fontSize="xs" color="gray.600">
+                    <Box p={3} bg={statBgBlue} borderRadius="md">
+                      <Text fontSize="xs" color={textColor}>
                         Total Transactions
                       </Text>
                       <Text fontSize="2xl" fontWeight="bold">
                         {txData.stats.count}
                       </Text>
                     </Box>
-                    <Box p={3} bg="green.50" borderRadius="md">
-                      <Text fontSize="xs" color="gray.600">
+                    <Box p={3} bg={statBgGreen} borderRadius="md">
+                      <Text fontSize="xs" color={textColor}>
                         Total Received
                       </Text>
                       <Text fontSize="2xl" fontWeight="bold">
                         ₳ {formatAda(txData.stats.totalReceived)}
                       </Text>
                     </Box>
-                    <Box p={3} bg="orange.50" borderRadius="md">
-                      <Text fontSize="xs" color="gray.600">
-                        Total Spent
+                    <Box p={3} bg={statBgOrange} borderRadius="md">
+                      <Text fontSize="xs" color={textColor}>
+                        Total Fees
                       </Text>
                       <Text fontSize="2xl" fontWeight="bold">
                         ₳ {formatAda(txData.stats.totalSpent)}
@@ -209,9 +284,9 @@ export function NodeDetail() {
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
-                        <YAxis />
+                        <YAxis label={{ value: 'Fees (ADA)', angle: -90, position: 'insideLeft' }} />
                         <Tooltip />
-                        <Line type="monotone" dataKey="ada" stroke="#3182ce" strokeWidth={2} />
+                        <Line type="monotone" dataKey="fees" stroke="#3182ce" strokeWidth={2} name="Fees" />
                       </LineChart>
                     </ResponsiveContainer>
                   </Box>
@@ -237,13 +312,20 @@ export function NodeDetail() {
                         <Tr>
                           <Th>Transaction Hash</Th>
                           <Th>Date & Time</Th>
-                          <Th isNumeric>Amount (ADA)</Th>
+                          <Th isNumeric>Fee (ADA)</Th>
                         </Tr>
                       </Thead>
                       <Tbody>
                         {txData.transactions.map((tx) => (
                           <Tr key={`${tx.txHash}-${tx.txIndex}`}>
-                            <Td fontFamily="mono" fontSize="sm">
+                            <Td 
+                              fontFamily="mono" 
+                              fontSize="sm"
+                              style={{
+                                filter: privacyMode ? 'blur(4px)' : 'none',
+                                transition: 'filter 0.2s',
+                              }}
+                            >
                               {truncateAddress(tx.txHash, 8, 8)}
                             </Td>
                             <Td fontSize="sm">{formatDate(tx.blockTime)}</Td>
@@ -270,4 +352,3 @@ export function NodeDetail() {
     </Box>
   );
 }
-

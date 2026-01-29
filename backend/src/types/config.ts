@@ -9,6 +9,9 @@ export interface DatabaseConfig {
 export interface NodeConfig {
   address: string;
   pair: string;
+  oracleScriptAddress: string;
+  startDate: string;
+  endDate?: string;
 }
 
 export interface PriceProviderConfig {
@@ -24,6 +27,7 @@ export interface AppConfig {
   nodes: NodeConfig[];
   rewardAddress: string;
   tokenPolicy: string;
+  tokenDecimals: number;
   priceProvider: PriceProviderConfig;
 }
 

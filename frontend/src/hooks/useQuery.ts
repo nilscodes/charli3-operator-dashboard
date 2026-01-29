@@ -29,8 +29,9 @@ export function useQuery<T>(
       return;
     }
 
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
       const result = await queryFnRef.current();
       setData(result);
       setError(null);
@@ -50,8 +51,7 @@ export function useQuery<T>(
       const interval = setInterval(fetchData, refetchInterval);
       return () => clearInterval(interval);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyString, refetchInterval, enabled]);
+  }, [fetchData, refetchInterval, enabled]);
 
   const refetch = useCallback(() => {
     return fetchData();

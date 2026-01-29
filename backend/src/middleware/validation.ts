@@ -2,9 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { plainToClass } from 'class-transformer';
 import { validate, ValidationError } from 'class-validator';
 
-/**
- * Middleware factory for validating request DTOs
- */
 export function validateDto(dtoClass: any, source: 'body' | 'query' | 'params' = 'body') {
   return async (req: Request, res: Response, next: NextFunction) => {
     const dtoInstance = plainToClass(dtoClass, req[source], { excludeExtraneousValues: true });
@@ -19,15 +16,11 @@ export function validateDto(dtoClass: any, source: 'body' | 'query' | 'params' =
       });
     }
 
-    // Replace the request data with validated DTO instance
     req[source] = dtoInstance;
     next();
   };
 }
 
-/**
- * Format validation errors for API response
- */
 function formatValidationErrors(errors: ValidationError[]): Record<string, string[]> {
   const formatted: Record<string, string[]> = {};
 
@@ -39,4 +32,3 @@ function formatValidationErrors(errors: ValidationError[]): Record<string, strin
 
   return formatted;
 }
-

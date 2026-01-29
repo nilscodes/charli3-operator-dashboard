@@ -12,6 +12,7 @@ import {
   FormErrorMessage,
   Text,
   VStack,
+  useColorModeValue,
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { apiClient } from '@/services/api';
@@ -25,6 +26,7 @@ export function ApiKeyModal({ isOpen, onSuccess }: ApiKeyModalProps) {
   const [apiKey, setApiKey] = useState('');
   const [error, setError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
+  const textColor = useColorModeValue('gray.600', 'gray.400');
 
   const handleSubmit = async () => {
     if (!apiKey.trim()) {
@@ -36,16 +38,10 @@ export function ApiKeyModal({ isOpen, onSuccess }: ApiKeyModalProps) {
     setError('');
 
     try {
-      // Store the API key
       apiClient.setApiKey(apiKey);
-
-      // Test the API key by making a request
       await apiClient.getNodes();
-
-      // If successful, call onSuccess
       onSuccess();
     } catch (err) {
-      // Clear the invalid API key
       apiClient.clearApiKey();
       setError('Invalid API key. Please try again.');
     } finally {
@@ -66,7 +62,7 @@ export function ApiKeyModal({ isOpen, onSuccess }: ApiKeyModalProps) {
         <ModalHeader>Authentication Required</ModalHeader>
         <ModalBody>
           <VStack spacing={4} align="stretch">
-            <Text fontSize="sm" color="gray.600">
+            <Text fontSize="sm" color={textColor}>
               Please enter your API key to access the Charli3 Dashboard.
             </Text>
             <FormControl isInvalid={!!error}>
@@ -97,4 +93,3 @@ export function ApiKeyModal({ isOpen, onSuccess }: ApiKeyModalProps) {
     </Modal>
   );
 }
-
